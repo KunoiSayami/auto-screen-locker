@@ -60,10 +60,16 @@ class LockService : Service() {
             if (idleMs >= timeoutMs) {
                 if (dpm.isAdminActive(adminComponent)) {
                     Log.d(TAG, "Locking screen now")
-                    checkFuture?.cancel(false)
                     dpm.lockNow()
-                    Prefs.setServiceEnabled(applicationContext, false)
-                    stopSelf()
+                    Prefs.setLastLockTime(applicationContext, System.currentTimeMillis())
+                    if (Prefs.isPersistent(applicationContext)) {
+                        // Reset timer so we wait for a full new timeout after next user interaction
+                        lastInteractionTime.set(Long.MAX_VALUE / 2)
+                    } else {
+                        checkFuture?.cancel(false)
+                        Prefs.setServiceEnabled(applicationContext, false)
+                        stopSelf()
+                    }
                 } else {
                     Log.w(TAG, "Timeout reached but device admin not active — cannot lock")
                 }

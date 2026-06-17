@@ -92,6 +92,17 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@id/tilSeconds" />
 
+        <!-- Persistent mode toggle -->
+        <CheckBox
+            android:id="@+id/switchPersistent"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/label_persistent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/btnSave" />
+
         <!-- Permission setup buttons -->
         <Button
             android:id="@+id/btnEnableAdmin"
@@ -101,7 +112,7 @@
             android:text="@string/btn_enable_admin"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/btnSave" />
+            app:layout_constraintTop_toBottomOf="@id/switchPersistent" />
 
         <Button
             android:id="@+id/btnEnableAccessibility"

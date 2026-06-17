@@ -11,6 +11,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.github.kunoisayami.autoscreenlocker.databinding.ActivityMainBinding
+import java.text.DateFormat
+import java.util.Date
 
 class MainActivity : AppCompatActivity() {
 
@@ -38,6 +40,7 @@ class MainActivity : AppCompatActivity() {
         adminComponent = ComponentName(this, LockDeviceAdmin::class.java)
 
         loadSavedTimeout()
+        binding.switchPersistent.isChecked = Prefs.isPersistent(this)
         setupListeners()
     }
 
@@ -66,6 +69,10 @@ class MainActivity : AppCompatActivity() {
             binding.tilMinutes.error = null
             Prefs.setTimeoutMs(this, totalSec * 1000L)
             updateUi()
+        }
+
+        binding.switchPersistent.setOnCheckedChangeListener { _, checked ->
+            Prefs.setPersistent(this, checked)
         }
 
         binding.btnEnableAdmin.setOnClickListener {
@@ -104,14 +111,25 @@ class MainActivity : AppCompatActivity() {
             if (serviceEnabled) R.string.btn_stop_service else R.string.btn_start_service
         )
 
+        val lastLockTime = Prefs.lastLockTime(this)
+        val lastLockStr = if (lastLockTime > 0L)
+            DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM).format(Date(lastLockTime))
+        else null
+
         binding.tvStatus.text = when {
             !adminActive -> getString(R.string.status_missing_admin)
             !accessibilityActive -> getString(R.string.status_missing_accessibility)
             serviceEnabled -> {
                 val totalSec = (Prefs.timeoutMs(this) / 1000).toInt()
-                getString(R.string.status_running, totalSec / 60, totalSec % 60)
+                buildString {
+                    append(getString(R.string.status_running, totalSec / 60, totalSec % 60))
+                    if (lastLockStr != null) append("\n${getString(R.string.status_last_lock, lastLockStr)}")
+                }
             }
-            else -> getString(R.string.status_stopped)
+            else -> buildString {
+                append(getString(R.string.status_stopped))
+                if (lastLockStr != null) append("\n${getString(R.string.status_last_lock, lastLockStr)}")
+            }
         }
     }
 
