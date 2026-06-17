@@ -6,10 +6,17 @@ import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
 import android.view.accessibility.AccessibilityManager
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import com.github.kunoisayami.autoscreenlocker.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
+
+    companion object {
+        const val MIN_TIMEOUT_SEC = 60
+    }
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var dpm: DevicePolicyManager
@@ -17,8 +24,15 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            view.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+            insets
+        }
 
         dpm = getSystemService(DEVICE_POLICY_SERVICE) as DevicePolicyManager
         adminComponent = ComponentName(this, LockDeviceAdmin::class.java)
@@ -43,8 +57,14 @@ class MainActivity : AppCompatActivity() {
         binding.btnSave.setOnClickListener {
             val minutes = binding.etMinutes.text?.toString()?.toIntOrNull() ?: 0
             val seconds = binding.etSeconds.text?.toString()?.toIntOrNull()?.coerceIn(0, 59) ?: 0
-            val totalMs = (minutes * 60L + seconds) * 1000L
-            Prefs.setTimeoutMs(this, totalMs.coerceAtLeast(1000L))
+            val totalSec = minutes * 60 + seconds
+            if (totalSec < MIN_TIMEOUT_SEC) {
+                binding.tilSeconds.error = getString(R.string.error_timeout_too_short, MIN_TIMEOUT_SEC)
+                return@setOnClickListener
+            }
+            binding.tilSeconds.error = null
+            binding.tilMinutes.error = null
+            Prefs.setTimeoutMs(this, totalSec * 1000L)
             updateUi()
         }
 
@@ -60,7 +80,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.btnToggleService.setOnClickListener {
-            if (LockService.isRunning) {
+            if (Prefs.isServiceEnabled(this)) {
                 stopService(Intent(this, LockService::class.java))
                 Prefs.setServiceEnabled(this, false)
             } else {
@@ -74,20 +94,20 @@ class MainActivity : AppCompatActivity() {
     private fun updateUi() {
         val adminActive = dpm.isAdminActive(adminComponent)
         val accessibilityActive = isAccessibilityEnabled()
-        val serviceRunning = LockService.isRunning
+        val serviceEnabled = Prefs.isServiceEnabled(this)
 
         binding.btnEnableAdmin.isEnabled = !adminActive
         binding.btnEnableAccessibility.isEnabled = !accessibilityActive
         binding.btnToggleService.isEnabled = adminActive && accessibilityActive
 
         binding.btnToggleService.setText(
-            if (serviceRunning) R.string.btn_stop_service else R.string.btn_start_service
+            if (serviceEnabled) R.string.btn_stop_service else R.string.btn_start_service
         )
 
         binding.tvStatus.text = when {
             !adminActive -> getString(R.string.status_missing_admin)
             !accessibilityActive -> getString(R.string.status_missing_accessibility)
-            serviceRunning -> {
+            serviceEnabled -> {
                 val totalSec = (Prefs.timeoutMs(this) / 1000).toInt()
                 getString(R.string.status_running, totalSec / 60, totalSec % 60)
             }
