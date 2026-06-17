@@ -24,7 +24,9 @@
     <string name="method_root_unavailable">Sleep via root — not available</string>
     <string name="label_persistent">Re-lock after each inactivity period (persistent)</string>
     <string name="status_last_lock">Last locked: %1$s</string>
-    <string name="error_timeout_too_short">Minimum timeout is %1$d seconds (1 minute)</string>
+    <string name="error_timeout_too_short">Minimum timeout is %1$d seconds</string>
+    <string name="label_warn_before_lock">Show warning 5 seconds before locking</string>
+    <string name="toast_locking_soon">Screen will lock in 5 seconds</string>
     <string name="notification_channel_name">Auto Screen Locker</string>
     <string name="notification_title">Auto Screen Locker active</string>
     <string name="notification_text">Will lock screen after inactivity timeout</string>

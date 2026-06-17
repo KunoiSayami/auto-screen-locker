@@ -20,13 +20,14 @@ import java.util.Date
 class MainActivity : AppCompatActivity() {
 
     companion object {
-        const val MIN_TIMEOUT_SEC = 60
+        const val MIN_TIMEOUT_SEC = 30
         private const val SHIZUKU_REQUEST_CODE = 1001
     }
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var dpm: DevicePolicyManager
     private lateinit var adminComponent: ComponentName
+    private var shizukuPermissionRequested = false
 
     private val shizukuPermissionListener = Shizuku.OnRequestPermissionResultListener { _, _ ->
         runOnUiThread { updateMethodSelector() }
@@ -51,6 +52,7 @@ class MainActivity : AppCompatActivity() {
 
         loadSavedTimeout()
         binding.switchPersistent.isChecked = Prefs.isPersistent(this)
+        binding.cbWarnBeforeLock.isChecked = Prefs.isWarnBeforeLock(this)
         setupListeners()
     }
 
@@ -78,8 +80,10 @@ class MainActivity : AppCompatActivity() {
         val shizukuAvailable = ScreenOff.isShizukuAvailable()
         val savedMethod = Prefs.screenOffMethod(this)
 
-        val enabledColor = ContextCompat.getColor(this, android.R.color.tab_indicator_text)
-        val disabledColor = ContextCompat.getColor(this, android.R.color.darker_gray)
+        val ta = theme.obtainStyledAttributes(intArrayOf(android.R.attr.textColorPrimary, android.R.attr.textColorHint))
+        val enabledColor = ta.getColor(0, 0xFFFFFFFF.toInt())
+        val disabledColor = ta.getColor(1, 0xFF888888.toInt())
+        ta.recycle()
 
         binding.rbMethodShizuku.apply {
             isEnabled = shizukuAvailable
@@ -126,8 +130,9 @@ class MainActivity : AppCompatActivity() {
 
         updateMethodSummary(effectiveMethod)
 
-        // Request Shizuku permission if installed but not granted
-        if (shizukuInstalled && !shizukuAvailable) {
+        // Auto-request Shizuku permission at most once per activity session
+        if (shizukuInstalled && !shizukuAvailable && !shizukuPermissionRequested) {
+            shizukuPermissionRequested = true
             try { Shizuku.requestPermission(SHIZUKU_REQUEST_CODE) } catch (_: Exception) {}
         }
     }
@@ -157,6 +162,10 @@ class MainActivity : AppCompatActivity() {
 
         binding.switchPersistent.setOnCheckedChangeListener { _, checked ->
             Prefs.setPersistent(this, checked)
+        }
+
+        binding.cbWarnBeforeLock.setOnCheckedChangeListener { _, checked ->
+            Prefs.setWarnBeforeLock(this, checked)
         }
 
         binding.llMethodHeader.setOnClickListener {

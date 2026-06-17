@@ -9,6 +9,7 @@ private const val KEY_SERVICE_ENABLED = "service_enabled"
 private const val KEY_PERSISTENT = "persistent"
 private const val KEY_SCREEN_OFF_METHOD = "screen_off_method"
 private const val KEY_LAST_LOCK_TIME = "last_lock_time"
+private const val KEY_WARN_BEFORE_LOCK = "warn_before_lock"
 
 private const val DEFAULT_TIMEOUT_MS = 60_000L  // 1 minute
 
@@ -49,6 +50,15 @@ object Prefs {
     fun setPersistent(context: Context, persistent: Boolean) {
         context.getSharedPreferences(PREF_FILE, Context.MODE_PRIVATE)
             .edit { putBoolean(KEY_PERSISTENT, persistent) }
+    }
+
+    fun isWarnBeforeLock(context: Context): Boolean =
+        context.getSharedPreferences(PREF_FILE, Context.MODE_PRIVATE)
+            .getBoolean(KEY_WARN_BEFORE_LOCK, true)
+
+    fun setWarnBeforeLock(context: Context, warn: Boolean) {
+        context.getSharedPreferences(PREF_FILE, Context.MODE_PRIVATE)
+            .edit { putBoolean(KEY_WARN_BEFORE_LOCK, warn) }
     }
 
     fun lastLockTime(context: Context): Long =

@@ -6,20 +6,26 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.os.SystemClock
 import android.util.Log
+import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
 class LockService : Service() {
 
     private lateinit var scheduler: ScheduledExecutorService
     private var checkFuture: ScheduledFuture<*>? = null
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private val warnToastShown = AtomicBoolean(false)
 
     override fun onCreate() {
         super.onCreate()
@@ -53,11 +59,23 @@ class LockService : Service() {
             val graceRemainingMs = GRACE_PERIOD_MS - (now - lastLockElapsedTime.get())
             Log.d(TAG, "idle=${idleMs}ms timeout=${timeoutMs}ms grace=${graceRemainingMs}ms")
             if (graceRemainingMs > 0) return@scheduleWithFixedDelay
+            val warnMs = timeoutMs - WARN_BEFORE_MS
+            if (Prefs.isWarnBeforeLock(applicationContext)
+                && warnMs > 0 && idleMs >= warnMs && idleMs < timeoutMs) {
+                if (warnToastShown.compareAndSet(false, true)) {
+                    mainHandler.post {
+                        Toast.makeText(applicationContext, R.string.toast_locking_soon, Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } else if (idleMs < warnMs) {
+                warnToastShown.set(false)
+            }
             if (idleMs >= timeoutMs) {
                 val method = Prefs.screenOffMethod(applicationContext)
                 Log.d(TAG, "Turning off screen via $method")
                 val success = ScreenOff.turnOffScreen(applicationContext, method)
                 if (success) {
+                    warnToastShown.set(false)
                     Prefs.setLastLockTime(applicationContext, System.currentTimeMillis())
                     lastLockElapsedTime.set(SystemClock.elapsedRealtime())
                     if (Prefs.isPersistent(applicationContext)) {
@@ -108,6 +126,7 @@ class LockService : Service() {
         private var instance: LockService? = null
 
         private const val GRACE_PERIOD_MS = 30_000L
+        private const val WARN_BEFORE_MS = 5_000L
 
         private val lastInteractionTime = AtomicLong(SystemClock.elapsedRealtime())
         private val lastLockElapsedTime = AtomicLong(0L)

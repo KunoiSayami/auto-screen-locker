@@ -103,6 +103,16 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/btnSave" />
 
+        <CheckBox
+            android:id="@+id/cbWarnBeforeLock"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/label_warn_before_lock"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/switchPersistent" />
+
         <!-- Screen-off method collapsible header -->
         <LinearLayout
             android:id="@+id/llMethodHeader"
@@ -115,7 +125,7 @@
             android:padding="4dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/switchPersistent">
+            app:layout_constraintTop_toBottomOf="@id/cbWarnBeforeLock">
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -174,6 +184,13 @@
 
         </RadioGroup>
 
+        <androidx.constraintlayout.widget.Barrier
+            android:id="@+id/barrierMethodBottom"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:barrierDirection="bottom"
+            app:constraint_referenced_ids="llMethodHeader,rgMethod" />
+
         <!-- Permission setup buttons -->
         <Button
             android:id="@+id/btnEnableAdmin"
@@ -183,9 +200,7 @@
             android:text="@string/btn_enable_admin"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/rgMethod"
-            app:layout_constraintBottom_toBottomOf="parent"
-            android:layout_marginBottom="0dp" />
+            app:layout_constraintTop_toBottomOf="@id/barrierMethodBottom" />
 
         <Button
             android:id="@+id/btnEnableAccessibility"
