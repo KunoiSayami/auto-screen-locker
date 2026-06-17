@@ -10,6 +10,7 @@ import android.content.ComponentName
 import android.content.Intent
 import android.os.IBinder
 import android.os.SystemClock
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
@@ -54,11 +55,17 @@ class LockService : Service() {
             val now = SystemClock.elapsedRealtime()
             val lastEvent = lastInteractionTime.get()
             val timeoutMs = Prefs.timeoutMs(applicationContext)
-            if (now - lastEvent >= timeoutMs) {
+            val idleMs = now - lastEvent
+            Log.d(TAG, "idle=${idleMs}ms timeout=${timeoutMs}ms adminActive=${dpm.isAdminActive(adminComponent)}")
+            if (idleMs >= timeoutMs) {
                 if (dpm.isAdminActive(adminComponent)) {
+                    Log.d(TAG, "Locking screen now")
+                    checkFuture?.cancel(false)
                     dpm.lockNow()
-                    // Reset so we don't lock immediately again on next unlock
-                    lastInteractionTime.set(SystemClock.elapsedRealtime())
+                    Prefs.setServiceEnabled(applicationContext, false)
+                    stopSelf()
+                } else {
+                    Log.w(TAG, "Timeout reached but device admin not active — cannot lock")
                 }
             }
         }, intervalMs, intervalMs, TimeUnit.MILLISECONDS)
@@ -92,6 +99,7 @@ class LockService : Service() {
 
     companion object {
         private const val NOTIFICATION_ID = 1
+        private const val TAG = "LockService"
 
         @Volatile
         private var instance: LockService? = null
