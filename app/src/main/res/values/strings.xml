@@ -15,6 +15,13 @@
     <string name="status_missing_accessibility">Accessibility service not enabled</string>
     <string name="label_minutes">Minutes</string>
     <string name="label_seconds">Seconds</string>
+    <string name="title_screen_off_method">Screen-off method</string>
+    <string name="method_lock_now">Lock screen (always available, requires password on wake)</string>
+    <string name="method_shizuku">Sleep via Shizuku (no password on wake)</string>
+    <string name="method_shizuku_not_installed">Sleep via Shizuku — not installed</string>
+    <string name="method_shizuku_no_permission">Sleep via Shizuku — permission not granted</string>
+    <string name="method_root">Sleep via root (no password on wake)</string>
+    <string name="method_root_unavailable">Sleep via root — not available</string>
     <string name="label_persistent">Re-lock after each inactivity period (persistent)</string>
     <string name="status_last_lock">Last locked: %1$s</string>
     <string name="error_timeout_too_short">Minimum timeout is %1$d seconds (1 minute)</string>

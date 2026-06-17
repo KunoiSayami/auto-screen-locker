@@ -5,8 +5,6 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
-import android.app.admin.DevicePolicyManager
-import android.content.ComponentName
 import android.content.Intent
 import android.os.IBinder
 import android.os.SystemClock
@@ -20,15 +18,11 @@ import java.util.concurrent.atomic.AtomicLong
 
 class LockService : Service() {
 
-    private lateinit var dpm: DevicePolicyManager
-    private lateinit var adminComponent: ComponentName
     private lateinit var scheduler: ScheduledExecutorService
     private var checkFuture: ScheduledFuture<*>? = null
 
     override fun onCreate() {
         super.onCreate()
-        dpm = getSystemService(DEVICE_POLICY_SERVICE) as DevicePolicyManager
-        adminComponent = ComponentName(this, LockDeviceAdmin::class.java)
         scheduler = Executors.newSingleThreadScheduledExecutor()
         instance = this
     }
@@ -60,9 +54,10 @@ class LockService : Service() {
             Log.d(TAG, "idle=${idleMs}ms timeout=${timeoutMs}ms grace=${graceRemainingMs}ms")
             if (graceRemainingMs > 0) return@scheduleWithFixedDelay
             if (idleMs >= timeoutMs) {
-                if (dpm.isAdminActive(adminComponent)) {
-                    Log.d(TAG, "Locking screen now")
-                    dpm.lockNow()
+                val method = Prefs.screenOffMethod(applicationContext)
+                Log.d(TAG, "Turning off screen via $method")
+                val success = ScreenOff.turnOffScreen(applicationContext, method)
+                if (success) {
                     Prefs.setLastLockTime(applicationContext, System.currentTimeMillis())
                     lastLockElapsedTime.set(SystemClock.elapsedRealtime())
                     if (Prefs.isPersistent(applicationContext)) {
@@ -73,7 +68,7 @@ class LockService : Service() {
                         stopSelf()
                     }
                 } else {
-                    Log.w(TAG, "Timeout reached but device admin not active — cannot lock")
+                    Log.w(TAG, "Screen off failed for method $method")
                 }
             }
         }, intervalMs, intervalMs, TimeUnit.MILLISECONDS)

@@ -5,12 +5,15 @@ import android.content.ComponentName
 import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
+import android.view.View
 import android.view.accessibility.AccessibilityManager
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.github.kunoisayami.autoscreenlocker.databinding.ActivityMainBinding
+import rikka.shizuku.Shizuku
 import java.text.DateFormat
 import java.util.Date
 
@@ -18,11 +21,16 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         const val MIN_TIMEOUT_SEC = 60
+        private const val SHIZUKU_REQUEST_CODE = 1001
     }
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var dpm: DevicePolicyManager
     private lateinit var adminComponent: ComponentName
+
+    private val shizukuPermissionListener = Shizuku.OnRequestPermissionResultListener { _, _ ->
+        runOnUiThread { updateMethodSelector() }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,14 +47,22 @@ class MainActivity : AppCompatActivity() {
         dpm = getSystemService(DEVICE_POLICY_SERVICE) as DevicePolicyManager
         adminComponent = ComponentName(this, LockDeviceAdmin::class.java)
 
+        Shizuku.addRequestPermissionResultListener(shizukuPermissionListener)
+
         loadSavedTimeout()
         binding.switchPersistent.isChecked = Prefs.isPersistent(this)
         setupListeners()
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        Shizuku.removeRequestPermissionResultListener(shizukuPermissionListener)
+    }
+
     override fun onResume() {
         super.onResume()
         updateUi()
+        updateMethodSelector()
     }
 
     private fun loadSavedTimeout() {
@@ -54,6 +70,74 @@ class MainActivity : AppCompatActivity() {
         val totalSec = (totalMs / 1000).toInt()
         binding.etMinutes.setText((totalSec / 60).toString())
         binding.etSeconds.setText((totalSec % 60).toString())
+    }
+
+    private fun updateMethodSelector() {
+        val rootAvailable = ScreenOff.isRootAvailable()
+        val shizukuInstalled = ScreenOff.isShizukuInstalled()
+        val shizukuAvailable = ScreenOff.isShizukuAvailable()
+        val savedMethod = Prefs.screenOffMethod(this)
+
+        val enabledColor = ContextCompat.getColor(this, android.R.color.tab_indicator_text)
+        val disabledColor = ContextCompat.getColor(this, android.R.color.darker_gray)
+
+        binding.rbMethodShizuku.apply {
+            isEnabled = shizukuAvailable
+            text = when {
+                !shizukuInstalled -> getString(R.string.method_shizuku_not_installed)
+                !shizukuAvailable -> getString(R.string.method_shizuku_no_permission)
+                else -> getString(R.string.method_shizuku)
+            }
+            setTextColor(if (shizukuAvailable) enabledColor else disabledColor)
+        }
+
+        binding.rbMethodRoot.apply {
+            isEnabled = rootAvailable
+            text = if (rootAvailable) getString(R.string.method_root)
+                   else getString(R.string.method_root_unavailable)
+            setTextColor(if (rootAvailable) enabledColor else disabledColor)
+        }
+
+        // Fall back to LOCK_NOW if saved method is no longer available
+        val effectiveMethod = when {
+            savedMethod == ScreenOffMethod.SHIZUKU && !shizukuAvailable -> ScreenOffMethod.LOCK_NOW
+            savedMethod == ScreenOffMethod.ROOT && !rootAvailable -> ScreenOffMethod.LOCK_NOW
+            else -> savedMethod
+        }
+
+        // Suppress the listener while programmatically checking to avoid a save loop
+        binding.rgMethod.setOnCheckedChangeListener(null)
+        binding.rgMethod.check(
+            when (effectiveMethod) {
+                ScreenOffMethod.LOCK_NOW -> R.id.rbMethodLockNow
+                ScreenOffMethod.SHIZUKU -> R.id.rbMethodShizuku
+                ScreenOffMethod.ROOT -> R.id.rbMethodRoot
+            }
+        )
+        binding.rgMethod.setOnCheckedChangeListener { _, checkedId ->
+            val method = when (checkedId) {
+                R.id.rbMethodShizuku -> ScreenOffMethod.SHIZUKU
+                R.id.rbMethodRoot -> ScreenOffMethod.ROOT
+                else -> ScreenOffMethod.LOCK_NOW
+            }
+            Prefs.setScreenOffMethod(this, method)
+            updateMethodSummary(method)
+        }
+
+        updateMethodSummary(effectiveMethod)
+
+        // Request Shizuku permission if installed but not granted
+        if (shizukuInstalled && !shizukuAvailable) {
+            try { Shizuku.requestPermission(SHIZUKU_REQUEST_CODE) } catch (_: Exception) {}
+        }
+    }
+
+    private fun updateMethodSummary(method: ScreenOffMethod) {
+        binding.tvMethodCurrent.text = when (method) {
+            ScreenOffMethod.LOCK_NOW -> getString(R.string.method_lock_now)
+            ScreenOffMethod.SHIZUKU -> getString(R.string.method_shizuku)
+            ScreenOffMethod.ROOT -> getString(R.string.method_root)
+        }
     }
 
     private fun setupListeners() {
@@ -73,6 +157,12 @@ class MainActivity : AppCompatActivity() {
 
         binding.switchPersistent.setOnCheckedChangeListener { _, checked ->
             Prefs.setPersistent(this, checked)
+        }
+
+        binding.llMethodHeader.setOnClickListener {
+            val expanded = binding.rgMethod.visibility == View.VISIBLE
+            binding.rgMethod.visibility = if (expanded) View.GONE else View.VISIBLE
+            binding.ivMethodChevron.rotation = if (expanded) 0f else 180f
         }
 
         binding.btnEnableAdmin.setOnClickListener {

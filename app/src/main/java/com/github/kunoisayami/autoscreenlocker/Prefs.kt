@@ -7,6 +7,7 @@ private const val PREF_FILE = "asl_prefs"
 private const val KEY_TIMEOUT_MS = "timeout_ms"
 private const val KEY_SERVICE_ENABLED = "service_enabled"
 private const val KEY_PERSISTENT = "persistent"
+private const val KEY_SCREEN_OFF_METHOD = "screen_off_method"
 private const val KEY_LAST_LOCK_TIME = "last_lock_time"
 
 private const val DEFAULT_TIMEOUT_MS = 60_000L  // 1 minute
@@ -28,6 +29,17 @@ object Prefs {
     fun setServiceEnabled(context: Context, enabled: Boolean) {
         context.getSharedPreferences(PREF_FILE, Context.MODE_PRIVATE)
             .edit { putBoolean(KEY_SERVICE_ENABLED, enabled) }
+    }
+
+    fun screenOffMethod(context: Context): ScreenOffMethod {
+        val name = context.getSharedPreferences(PREF_FILE, Context.MODE_PRIVATE)
+            .getString(KEY_SCREEN_OFF_METHOD, ScreenOffMethod.LOCK_NOW.name)
+        return ScreenOffMethod.entries.find { it.name == name } ?: ScreenOffMethod.LOCK_NOW
+    }
+
+    fun setScreenOffMethod(context: Context, method: ScreenOffMethod) {
+        context.getSharedPreferences(PREF_FILE, Context.MODE_PRIVATE)
+            .edit { putString(KEY_SCREEN_OFF_METHOD, method.name) }
     }
 
     fun isPersistent(context: Context): Boolean =
