@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">Auto Screen Locker</string>
+    <string name="accessibility_service_label">Auto Screen Locker</string>
+    <string name="accessibility_service_description">Monitors user interaction to automatically lock the screen after a period of inactivity.</string>
+
+    <string name="title_timeout_setting">Lock screen after</string>
+    <string name="btn_save">Save</string>
+    <string name="btn_enable_admin">Grant Device Admin</string>
+    <string name="btn_enable_accessibility">Enable Accessibility</string>
+    <string name="btn_start_service">Start Service</string>
+    <string name="btn_stop_service">Stop Service</string>
+    <string name="status_running">Service running — locks after %1$d min %2$d sec of inactivity</string>
+    <string name="status_stopped">Service stopped</string>
+    <string name="status_missing_admin">Device admin permission required</string>
+    <string name="status_missing_accessibility">Accessibility service not enabled</string>
+    <string name="label_minutes">Minutes</string>
+    <string name="label_seconds">Seconds</string>
+    <string name="notification_channel_name">Auto Screen Locker</string>
+    <string name="notification_title">Auto Screen Locker active</string>
+    <string name="notification_text">Will lock screen after inactivity timeout</string>
+</resources>
