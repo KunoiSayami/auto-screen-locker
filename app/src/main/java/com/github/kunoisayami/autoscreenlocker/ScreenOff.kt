@@ -3,12 +3,8 @@ package com.github.kunoisayami.autoscreenlocker
 import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
-import android.os.IBinder
-import android.os.SystemClock
 import android.util.Log
 import rikka.shizuku.Shizuku
-import rikka.shizuku.ShizukuBinderWrapper
-import rikka.shizuku.SystemServiceHelper
 
 object ScreenOff {
     private const val TAG = "ScreenOff"
@@ -56,13 +52,11 @@ object ScreenOff {
     }
 
     private fun goToSleepViaShizuku(): Boolean = try {
-        val binder: IBinder = ShizukuBinderWrapper(SystemServiceHelper.getSystemService("power"))
-        // Use reflection to call IPowerManager.goToSleep via the wrapped binder
-        val stubClass = Class.forName("android.os.IPowerManager\$Stub")
-        val asInterface = stubClass.getMethod("asInterface", IBinder::class.java)
-        val pm = asInterface.invoke(null, binder)
-        val goToSleep = pm.javaClass.getMethod("goToSleep", Long::class.java, Int::class.java, Int::class.java)
-        goToSleep.invoke(pm, SystemClock.uptimeMillis(), 2 /* GO_TO_SLEEP_REASON_APPLICATION */, 0)
+        val newProcess = Shizuku::class.java.getDeclaredMethod(
+            "newProcess", Array<String>::class.java, Array<String>::class.java, String::class.java
+        ).also { it.isAccessible = true }
+        val process = newProcess.invoke(null, arrayOf("input", "keyevent", "26"), null, null) as Process
+        process.waitFor()
         true
     } catch (e: Exception) {
         Log.e(TAG, "Shizuku goToSleep failed", e)

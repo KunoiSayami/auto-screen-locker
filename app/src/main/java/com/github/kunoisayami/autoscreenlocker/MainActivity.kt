@@ -20,7 +20,7 @@ import java.util.Date
 class MainActivity : AppCompatActivity() {
 
     companion object {
-        const val MIN_TIMEOUT_SEC = 30
+        const val MIN_TIMEOUT_SEC = 20
         private const val SHIZUKU_REQUEST_CODE = 1001
     }
 

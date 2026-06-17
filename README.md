@@ -26,7 +26,7 @@ The app detects which methods are available and falls back to Lock screen if the
 ## Setup
 
 1. **Enable Accessibility Service** — required to detect user interaction. Tap the button, find *Auto Screen Locker* in the accessibility settings list, and toggle it on.
-2. **Set timeout** — enter minutes and seconds (minimum 30 seconds). Optionally enable *Show warning 5 seconds before locking* to get a toast notification before the screen turns off.
+2. **Set timeout** — enter minutes and seconds (minimum 20 seconds). Optionally enable *Show warning 5 seconds before locking* to get a toast notification before the screen turns off.
 3. **Choose screen-off method** — expand the *Screen-off method* section and pick one:
    - *Lock screen*: tap **Grant Device Admin** and approve the system prompt.
    - *Shizuku*: install and start Shizuku; the app will request permission automatically.
