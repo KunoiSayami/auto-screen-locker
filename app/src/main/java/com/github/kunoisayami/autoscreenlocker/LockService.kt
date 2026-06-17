@@ -56,14 +56,16 @@ class LockService : Service() {
             val lastEvent = lastInteractionTime.get()
             val timeoutMs = Prefs.timeoutMs(applicationContext)
             val idleMs = now - lastEvent
-            Log.d(TAG, "idle=${idleMs}ms timeout=${timeoutMs}ms adminActive=${dpm.isAdminActive(adminComponent)}")
+            val graceRemainingMs = GRACE_PERIOD_MS - (now - lastLockElapsedTime.get())
+            Log.d(TAG, "idle=${idleMs}ms timeout=${timeoutMs}ms grace=${graceRemainingMs}ms")
+            if (graceRemainingMs > 0) return@scheduleWithFixedDelay
             if (idleMs >= timeoutMs) {
                 if (dpm.isAdminActive(adminComponent)) {
                     Log.d(TAG, "Locking screen now")
                     dpm.lockNow()
                     Prefs.setLastLockTime(applicationContext, System.currentTimeMillis())
+                    lastLockElapsedTime.set(SystemClock.elapsedRealtime())
                     if (Prefs.isPersistent(applicationContext)) {
-                        // Reset timer so we wait for a full new timeout after next user interaction
                         lastInteractionTime.set(Long.MAX_VALUE / 2)
                     } else {
                         checkFuture?.cancel(false)
@@ -110,7 +112,10 @@ class LockService : Service() {
         @Volatile
         private var instance: LockService? = null
 
+        private const val GRACE_PERIOD_MS = 30_000L
+
         private val lastInteractionTime = AtomicLong(SystemClock.elapsedRealtime())
+        private val lastLockElapsedTime = AtomicLong(0L)
 
         fun resetTimer() {
             lastInteractionTime.set(SystemClock.elapsedRealtime())
