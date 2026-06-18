@@ -15,6 +15,7 @@
     <string name="status_no_method_available">No screen-off method available — grant device admin, Shizuku, or root</string>
     <string name="status_using_fallback">Using fallback method: %1$s</string>
     <string name="status_last_lock">Last locked: %1$s via %2$s</string>
+    <string name="status_app_list">App list: %1$s (%2$d apps)</string>
     <string name="label_minutes">Minutes</string>
     <string name="label_seconds">Seconds</string>
     <string name="label_total_seconds">Total seconds</string>
@@ -41,7 +42,9 @@
     <string name="notification_channel_name">Auto Screen Locker</string>
     <string name="notification_title">Auto Screen Locker active</string>
     <string name="notification_text">Will lock screen after inactivity timeout</string>
+    <string name="title_settings">Settings</string>
     <string name="btn_app_list">App List (Blacklist / Whitelist)</string>
+    <string name="btn_edit_app_list">Edit app list…</string>
     <string name="title_app_list">App List</string>
     <string name="label_app_list_mode">Mode</string>
     <string name="app_list_mode_off">Off</string>
