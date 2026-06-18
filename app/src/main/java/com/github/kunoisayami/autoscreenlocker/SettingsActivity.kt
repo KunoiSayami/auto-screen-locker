@@ -6,14 +6,15 @@ import android.content.Intent
 import android.provider.Settings
 import android.view.View
 import android.os.Bundle
+import android.widget.ArrayAdapter
+import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.github.kunoisayami.autoscreenlocker.databinding.ActivitySettingsBinding
 import rikka.shizuku.Shizuku
 
-class SettingsActivity : AppCompatActivity() {
+class SettingsActivity : BaseActivity() {
 
     private lateinit var binding: ActivitySettingsBinding
     private lateinit var dpm: DevicePolicyManager
@@ -24,6 +25,12 @@ class SettingsActivity : AppCompatActivity() {
 
     companion object {
         private const val SHIZUKU_REQUEST_CODE = 1002
+        private const val KEY_SUPPRESS_DROPDOWN = "suppress_dropdown"
+
+        private val LANGUAGE_TAGS = listOf("auto", "en", "fr", "de", "ja", "zh-TW", "zh-CN")
+        private val LANGUAGE_LABELS = listOf(
+            "Auto", "English", "Français", "Deutsch", "日本語", "繁體中文", "简体中文"
+        )
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -48,8 +55,13 @@ class SettingsActivity : AppCompatActivity() {
         binding.switchPersistent.isChecked = Prefs.isPersistent(this)
         binding.cbWarnBeforeLock.isChecked = Prefs.isWarnBeforeLock(this)
         loadAppListMode()
-
+        setupLanguageSelector(savedInstanceState?.getBoolean(KEY_SUPPRESS_DROPDOWN, false) == true)
         setupListeners()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean(KEY_SUPPRESS_DROPDOWN, true)
     }
 
     override fun onDestroy() {
@@ -87,6 +99,42 @@ class SettingsActivity : AppCompatActivity() {
             }
         )
         binding.btnAppList.visibility = if (mode == AppListMode.OFF) View.GONE else View.VISIBLE
+    }
+
+    private fun setupLanguageSelector(suppressDropdown: Boolean = false) {
+        val actv = binding.actvLanguage as MaterialAutoCompleteTextView
+        // Non-filterable adapter: getFilter returns a no-op so the full list always shows
+        val adapter = object : ArrayAdapter<String>(
+            this, android.R.layout.simple_dropdown_item_1line, LANGUAGE_LABELS
+        ) {
+            override fun getFilter() = object : android.widget.Filter() {
+                override fun performFiltering(constraint: CharSequence?) =
+                    FilterResults().apply { values = LANGUAGE_LABELS; count = LANGUAGE_LABELS.size }
+                override fun publishResults(constraint: CharSequence?, results: FilterResults?) {
+                    notifyDataSetChanged()
+                }
+            }
+        }
+        actv.setAdapter(adapter)
+
+        val currentTag = Prefs.language(this)
+        val currentIndex = LANGUAGE_TAGS.indexOf(currentTag).takeIf { it >= 0 } ?: 0
+        actv.setText(LANGUAGE_LABELS[currentIndex], false)
+
+        if (suppressDropdown) {
+            actv.dismissDropDown()
+            actv.clearFocus()
+        }
+
+        actv.setOnItemClickListener { _, _, position, _ ->
+            val selectedTag = LANGUAGE_TAGS[position]
+            actv.dismissDropDown()
+            actv.clearFocus()
+            if (selectedTag != Prefs.language(this)) {
+                Prefs.setLanguage(this, selectedTag)
+                recreate()
+            }
+        }
     }
 
     private fun setupListeners() {

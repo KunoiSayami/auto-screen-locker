@@ -13,6 +13,7 @@ private const val KEY_WARN_BEFORE_LOCK = "warn_before_lock"
 private const val KEY_LAST_LOCK_METHOD = "last_lock_method"
 private const val KEY_APP_LIST_MODE = "app_list_mode"
 private const val KEY_APP_LIST_PACKAGES = "app_list_packages"
+private const val KEY_LANGUAGE = "language"
 
 private const val DEFAULT_TIMEOUT_MS = 60_000L  // 1 minute
 
@@ -104,5 +105,15 @@ object Prefs {
     fun setAppListPackages(context: Context, packages: Set<String>) {
         context.getSharedPreferences(PREF_FILE, Context.MODE_PRIVATE)
             .edit { putString(KEY_APP_LIST_PACKAGES, packages.joinToString("\n")) }
+    }
+
+    /** Returns the user-chosen language tag, or "auto" if following system locale. */
+    fun language(context: Context): String =
+        context.getSharedPreferences(PREF_FILE, Context.MODE_PRIVATE)
+            .getString(KEY_LANGUAGE, "auto") ?: "auto"
+
+    fun setLanguage(context: Context, tag: String) {
+        context.getSharedPreferences(PREF_FILE, Context.MODE_PRIVATE)
+            .edit { putString(KEY_LANGUAGE, tag) }
     }
 }

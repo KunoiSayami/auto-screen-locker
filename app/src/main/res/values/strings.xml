@@ -59,4 +59,12 @@
     <string name="dialog_battery_message">Auto Screen Locker needs to be excluded from battery optimization to work reliably in the background. Tap OK to open the settings.</string>
     <string name="dialog_battery_ok">OK</string>
     <string name="dialog_battery_cancel">Not now</string>
+    <string name="label_language">Language</string>
+    <string name="language_auto">Auto</string>
+    <string name="language_en">English</string>
+    <string name="language_fr">Français</string>
+    <string name="language_de">Deutsch</string>
+    <string name="language_ja">日本語</string>
+    <string name="language_zh_tw">繁體中文</string>
+    <string name="language_zh_cn">简体中文</string>
 </resources>

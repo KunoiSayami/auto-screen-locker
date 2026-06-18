@@ -13,7 +13,6 @@ import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.RadioGroup
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -21,7 +20,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.textfield.TextInputEditText
 import java.util.concurrent.Executors
 
-class AppListActivity : AppCompatActivity() {
+class AppListActivity : BaseActivity() {
 
     private val selectedPackages = mutableSetOf<String>()
     private lateinit var adapter: AppAdapter

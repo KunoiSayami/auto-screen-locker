@@ -10,7 +10,6 @@ import android.provider.Settings
 import android.view.View
 import android.view.accessibility.AccessibilityManager
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.enableEdgeToEdge
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -18,7 +17,7 @@ import com.github.kunoisayami.autoscreenlocker.databinding.ActivityMainBinding
 import java.text.DateFormat
 import java.util.Date
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : BaseActivity() {
 
     companion object {
         const val MIN_TIMEOUT_SEC = 20
@@ -77,7 +76,22 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        if (isLocaleStale()) {
+            recreate()
+            return
+        }
         updateUi()
+    }
+
+    private fun isLocaleStale(): Boolean {
+        val tag = Prefs.language(this)
+        val appLocale = resources.configuration.locales[0]
+        val expectedLocale = if (tag == "auto")
+            App.systemLocale
+        else
+            LocaleHelper.tagToLocale(tag)
+        return appLocale.language != expectedLocale.language ||
+            appLocale.country != expectedLocale.country
     }
 
     private fun loadSavedTimeout() {
