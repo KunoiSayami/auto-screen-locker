@@ -27,8 +27,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var dpm: DevicePolicyManager
     private lateinit var adminComponent: ComponentName
-    private var shizukuPermissionRequested = false
-
     private val shizukuPermissionListener = Shizuku.OnRequestPermissionResultListener { _, _ ->
         runOnUiThread { updateMethodSelector() }
     }
@@ -56,7 +54,7 @@ class MainActivity : AppCompatActivity() {
         setupListeners()
     }
 
-    override fun onDestroy() {
+override fun onDestroy() {
         super.onDestroy()
         Shizuku.removeRequestPermissionResultListener(shizukuPermissionListener)
     }
@@ -75,6 +73,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateMethodSelector() {
+        val adminActive = dpm.isAdminActive(adminComponent)
         val rootAvailable = ScreenOff.isRootAvailable()
         val shizukuInstalled = ScreenOff.isShizukuInstalled()
         val shizukuAvailable = ScreenOff.isShizukuAvailable()
@@ -84,6 +83,13 @@ class MainActivity : AppCompatActivity() {
         val enabledColor = ta.getColor(0, 0xFFFFFFFF.toInt())
         val disabledColor = ta.getColor(1, 0xFF888888.toInt())
         ta.recycle()
+
+        binding.rbMethodLockNow.apply {
+            isEnabled = adminActive
+            text = if (adminActive) getString(R.string.method_lock_now)
+                   else getString(R.string.method_lock_now_no_admin)
+            setTextColor(if (adminActive) enabledColor else disabledColor)
+        }
 
         binding.rbMethodShizuku.apply {
             isEnabled = shizukuAvailable
@@ -102,17 +108,10 @@ class MainActivity : AppCompatActivity() {
             setTextColor(if (rootAvailable) enabledColor else disabledColor)
         }
 
-        // Fall back to LOCK_NOW if saved method is no longer available
-        val effectiveMethod = when {
-            savedMethod == ScreenOffMethod.SHIZUKU && !shizukuAvailable -> ScreenOffMethod.LOCK_NOW
-            savedMethod == ScreenOffMethod.ROOT && !rootAvailable -> ScreenOffMethod.LOCK_NOW
-            else -> savedMethod
-        }
-
-        // Suppress the listener while programmatically checking to avoid a save loop
+        // Show the saved preference in the radio group — never mutate it here
         binding.rgMethod.setOnCheckedChangeListener(null)
         binding.rgMethod.check(
-            when (effectiveMethod) {
+            when (savedMethod) {
                 ScreenOffMethod.LOCK_NOW -> R.id.rbMethodLockNow
                 ScreenOffMethod.SHIZUKU -> R.id.rbMethodShizuku
                 ScreenOffMethod.ROOT -> R.id.rbMethodRoot
@@ -125,24 +124,19 @@ class MainActivity : AppCompatActivity() {
                 else -> ScreenOffMethod.LOCK_NOW
             }
             Prefs.setScreenOffMethod(this, method)
-            updateMethodSummary(method)
+            updateUi()
         }
 
-        updateMethodSummary(effectiveMethod)
-
-        // Auto-request Shizuku permission at most once per activity session
-        if (shizukuInstalled && !shizukuAvailable && !shizukuPermissionRequested) {
-            shizukuPermissionRequested = true
+        // Auto-request Shizuku permission only when the user has explicitly chosen Shizuku
+        if (savedMethod == ScreenOffMethod.SHIZUKU && shizukuInstalled && !shizukuAvailable) {
             try { Shizuku.requestPermission(SHIZUKU_REQUEST_CODE) } catch (_: Exception) {}
         }
     }
 
-    private fun updateMethodSummary(method: ScreenOffMethod) {
-        binding.tvMethodCurrent.text = when (method) {
-            ScreenOffMethod.LOCK_NOW -> getString(R.string.method_lock_now)
-            ScreenOffMethod.SHIZUKU -> getString(R.string.method_shizuku)
-            ScreenOffMethod.ROOT -> getString(R.string.method_root)
-        }
+    private fun methodLabel(method: ScreenOffMethod) = when (method) {
+        ScreenOffMethod.LOCK_NOW -> getString(R.string.method_short_lock_now)
+        ScreenOffMethod.SHIZUKU -> getString(R.string.method_short_shizuku)
+        ScreenOffMethod.ROOT -> getString(R.string.method_short_root)
     }
 
     private fun isSecondsModeActive() = binding.rgInputMode.checkedRadioButtonId == R.id.rbModeTotalSec
@@ -242,33 +236,54 @@ class MainActivity : AppCompatActivity() {
         val adminActive = dpm.isAdminActive(adminComponent)
         val accessibilityActive = isAccessibilityEnabled()
         val serviceEnabled = Prefs.isServiceEnabled(this)
+        val savedMethod = Prefs.screenOffMethod(this)
+        val effectiveMethod = ScreenOff.resolveMethod(this)
+
+        // Update the collapsible header summary
+        binding.tvMethodCurrent.text = if (effectiveMethod == null) {
+            getString(R.string.method_none_available)
+        } else if (effectiveMethod != savedMethod) {
+            getString(R.string.method_summary_fallback, methodLabel(savedMethod), methodLabel(effectiveMethod))
+        } else {
+            methodLabel(effectiveMethod)
+        }
 
         binding.btnEnableAdmin.isEnabled = !adminActive
         binding.btnEnableAccessibility.isEnabled = !accessibilityActive
-        binding.btnToggleService.isEnabled = adminActive && accessibilityActive
+        binding.btnToggleService.isEnabled = effectiveMethod != null && accessibilityActive
 
         binding.btnToggleService.setText(
             if (serviceEnabled) R.string.btn_stop_service else R.string.btn_start_service
         )
 
         val lastLockTime = Prefs.lastLockTime(this)
+        val lastLockMethod = Prefs.lastLockMethod(this)
         val lastLockStr = if (lastLockTime > 0L)
             DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM).format(Date(lastLockTime))
         else null
 
         binding.tvStatus.text = when {
-            !adminActive -> getString(R.string.status_missing_admin)
             !accessibilityActive -> getString(R.string.status_missing_accessibility)
+            effectiveMethod == null -> getString(R.string.status_no_method_available)
             serviceEnabled -> {
                 val totalSec = (Prefs.timeoutMs(this) / 1000).toInt()
                 buildString {
                     append(getString(R.string.status_running, totalSec / 60, totalSec % 60))
-                    if (lastLockStr != null) append("\n${getString(R.string.status_last_lock, lastLockStr)}")
+                    if (effectiveMethod != savedMethod) {
+                        append("\n${getString(R.string.status_using_fallback, methodLabel(effectiveMethod))}")
+                    }
+                    if (lastLockStr != null) {
+                        val methodStr = if (lastLockMethod != null) methodLabel(lastLockMethod) else "?"
+                        append("\n${getString(R.string.status_last_lock, lastLockStr, methodStr)}")
+                    }
                 }
             }
             else -> buildString {
                 append(getString(R.string.status_stopped))
-                if (lastLockStr != null) append("\n${getString(R.string.status_last_lock, lastLockStr)}")
+                if (lastLockStr != null) {
+                    val methodStr = if (lastLockMethod != null) methodLabel(lastLockMethod) else "?"
+                    append("\n${getString(R.string.status_last_lock, lastLockStr, methodStr)}")
+                }
             }
         }
     }

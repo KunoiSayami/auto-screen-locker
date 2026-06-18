@@ -10,6 +10,7 @@ private const val KEY_PERSISTENT = "persistent"
 private const val KEY_SCREEN_OFF_METHOD = "screen_off_method"
 private const val KEY_LAST_LOCK_TIME = "last_lock_time"
 private const val KEY_WARN_BEFORE_LOCK = "warn_before_lock"
+private const val KEY_LAST_LOCK_METHOD = "last_lock_method"
 
 private const val DEFAULT_TIMEOUT_MS = 60_000L  // 1 minute
 
@@ -68,5 +69,16 @@ object Prefs {
     fun setLastLockTime(context: Context, timeMs: Long) {
         context.getSharedPreferences(PREF_FILE, Context.MODE_PRIVATE)
             .edit { putLong(KEY_LAST_LOCK_TIME, timeMs) }
+    }
+
+    fun lastLockMethod(context: Context): ScreenOffMethod? {
+        val name = context.getSharedPreferences(PREF_FILE, Context.MODE_PRIVATE)
+            .getString(KEY_LAST_LOCK_METHOD, null) ?: return null
+        return ScreenOffMethod.entries.find { it.name == name }
+    }
+
+    fun setLastLockMethod(context: Context, method: ScreenOffMethod) {
+        context.getSharedPreferences(PREF_FILE, Context.MODE_PRIVATE)
+            .edit { putString(KEY_LAST_LOCK_METHOD, method.name) }
     }
 }

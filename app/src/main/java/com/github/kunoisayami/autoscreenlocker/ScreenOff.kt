@@ -9,6 +9,11 @@ import rikka.shizuku.Shizuku
 object ScreenOff {
     private const val TAG = "ScreenOff"
 
+    fun isLockNowAvailable(context: Context): Boolean {
+        val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+        return dpm.isAdminActive(ComponentName(context, LockDeviceAdmin::class.java))
+    }
+
     fun isRootAvailable(): Boolean = try {
         val process = Runtime.getRuntime().exec(arrayOf("su", "-c", "id"))
         val result = process.inputStream.bufferedReader().readLine() ?: ""
@@ -29,6 +34,24 @@ object ScreenOff {
             Shizuku.checkSelfPermission() == android.content.pm.PackageManager.PERMISSION_GRANTED
     } catch (e: Exception) {
         false
+    }
+
+    fun isAvailable(context: Context, method: ScreenOffMethod): Boolean = when (method) {
+        ScreenOffMethod.LOCK_NOW -> isLockNowAvailable(context)
+        ScreenOffMethod.SHIZUKU -> isShizukuAvailable()
+        ScreenOffMethod.ROOT -> isRootAvailable()
+    }
+
+    /**
+     * Returns the method that will actually be used at lock time.
+     * Tries the stored preference first, then falls back: Shizuku → Root → LockNow.
+     * Returns null if no method is currently available.
+     */
+    fun resolveMethod(context: Context): ScreenOffMethod? {
+        val preferred = Prefs.screenOffMethod(context)
+        if (isAvailable(context, preferred)) return preferred
+        val fallbackOrder = listOf(ScreenOffMethod.SHIZUKU, ScreenOffMethod.ROOT, ScreenOffMethod.LOCK_NOW)
+        return fallbackOrder.firstOrNull { it != preferred && isAvailable(context, it) }
     }
 
     fun turnOffScreen(context: Context, method: ScreenOffMethod): Boolean {

@@ -71,12 +71,17 @@ class LockService : Service() {
                 warnToastShown.set(false)
             }
             if (idleMs >= timeoutMs) {
-                val method = Prefs.screenOffMethod(applicationContext)
+                val method = ScreenOff.resolveMethod(applicationContext)
+                if (method == null) {
+                    Log.w(TAG, "No screen-off method available, skipping lock")
+                    return@scheduleWithFixedDelay
+                }
                 Log.d(TAG, "Turning off screen via $method")
                 val success = ScreenOff.turnOffScreen(applicationContext, method)
                 if (success) {
                     warnToastShown.set(false)
                     Prefs.setLastLockTime(applicationContext, System.currentTimeMillis())
+                    Prefs.setLastLockMethod(applicationContext, method)
                     lastLockElapsedTime.set(SystemClock.elapsedRealtime())
                     if (Prefs.isPersistent(applicationContext)) {
                         lastInteractionTime.set(Long.MAX_VALUE / 2)
