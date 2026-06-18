@@ -41,6 +41,17 @@
     <string name="notification_channel_name">Auto Screen Locker</string>
     <string name="notification_title">Auto Screen Locker active</string>
     <string name="notification_text">Will lock screen after inactivity timeout</string>
+    <string name="btn_app_list">App List (Blacklist / Whitelist)</string>
+    <string name="title_app_list">App List</string>
+    <string name="label_app_list_mode">Mode</string>
+    <string name="app_list_mode_off">Off</string>
+    <string name="app_list_mode_blacklist">Blacklist</string>
+    <string name="app_list_mode_whitelist">Whitelist</string>
+    <string name="app_list_mode_off_hint">Lock timer always runs regardless of foreground app.</string>
+    <string name="app_list_mode_blacklist_hint">Screen will not lock while a listed app is in the foreground.</string>
+    <string name="app_list_mode_whitelist_hint">Screen will only lock while a listed app is in the foreground.</string>
+    <string name="label_show_system_apps">Show system apps</string>
+    <string name="hint_search_apps">Search by name or package</string>
     <string name="dialog_battery_title">Disable Battery Optimization</string>
     <string name="dialog_battery_message">Auto Screen Locker needs to be excluded from battery optimization to work reliably in the background. Tap OK to open the settings.</string>
     <string name="dialog_battery_ok">OK</string>

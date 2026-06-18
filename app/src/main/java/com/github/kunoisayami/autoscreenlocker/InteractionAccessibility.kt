@@ -3,11 +3,19 @@ package com.github.kunoisayami.autoscreenlocker
 import android.accessibilityservice.AccessibilityService
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
+import java.util.concurrent.atomic.AtomicReference
 
 class InteractionAccessibility : AccessibilityService() {
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         val type = event?.eventType ?: return
+        if (type == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+            val pkg = event.packageName?.toString()
+            if (pkg != null) {
+                foregroundPackage.set(pkg)
+                Log.d(TAG, "Foreground app: $pkg")
+            }
+        }
         if (type in USER_INTERACTION_EVENTS) {
             Log.d(TAG, "User interaction detected: eventType=${AccessibilityEvent.eventTypeToString(type)}")
             LockService.resetTimer()
@@ -21,6 +29,8 @@ class InteractionAccessibility : AccessibilityService() {
 
         var isRunning = false
             private set
+
+        val foregroundPackage = AtomicReference<String?>(null)
 
         private val USER_INTERACTION_EVENTS = setOf(
             AccessibilityEvent.TYPE_VIEW_CLICKED,

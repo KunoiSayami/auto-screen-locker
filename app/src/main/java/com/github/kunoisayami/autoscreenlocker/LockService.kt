@@ -71,6 +71,18 @@ class LockService : Service() {
                 warnToastShown.set(false)
             }
             if (idleMs >= timeoutMs) {
+                val fg = InteractionAccessibility.foregroundPackage.get()
+                val listMode = Prefs.appListMode(applicationContext)
+                val listPackages = Prefs.appListPackages(applicationContext)
+                val skip = when (listMode) {
+                    AppListMode.BLACKLIST -> fg != null && fg in listPackages
+                    AppListMode.WHITELIST -> fg != null && fg !in listPackages
+                    AppListMode.OFF -> false
+                }
+                if (skip) {
+                    Log.d(TAG, "Skipping lock — foreground app $fg is $listMode listed")
+                    return@scheduleWithFixedDelay
+                }
                 val method = ScreenOff.resolveMethod(applicationContext)
                 if (method == null) {
                     Log.w(TAG, "No screen-off method available, skipping lock")

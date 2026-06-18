@@ -11,6 +11,8 @@ private const val KEY_SCREEN_OFF_METHOD = "screen_off_method"
 private const val KEY_LAST_LOCK_TIME = "last_lock_time"
 private const val KEY_WARN_BEFORE_LOCK = "warn_before_lock"
 private const val KEY_LAST_LOCK_METHOD = "last_lock_method"
+private const val KEY_APP_LIST_MODE = "app_list_mode"
+private const val KEY_APP_LIST_PACKAGES = "app_list_packages"
 
 private const val DEFAULT_TIMEOUT_MS = 60_000L  // 1 minute
 
@@ -80,5 +82,27 @@ object Prefs {
     fun setLastLockMethod(context: Context, method: ScreenOffMethod) {
         context.getSharedPreferences(PREF_FILE, Context.MODE_PRIVATE)
             .edit { putString(KEY_LAST_LOCK_METHOD, method.name) }
+    }
+
+    fun appListMode(context: Context): AppListMode {
+        val name = context.getSharedPreferences(PREF_FILE, Context.MODE_PRIVATE)
+            .getString(KEY_APP_LIST_MODE, AppListMode.OFF.name)
+        return AppListMode.entries.find { it.name == name } ?: AppListMode.OFF
+    }
+
+    fun setAppListMode(context: Context, mode: AppListMode) {
+        context.getSharedPreferences(PREF_FILE, Context.MODE_PRIVATE)
+            .edit { putString(KEY_APP_LIST_MODE, mode.name) }
+    }
+
+    fun appListPackages(context: Context): Set<String> {
+        val raw = context.getSharedPreferences(PREF_FILE, Context.MODE_PRIVATE)
+            .getString(KEY_APP_LIST_PACKAGES, null) ?: return emptySet()
+        return raw.split("\n").filter { it.isNotEmpty() }.toSet()
+    }
+
+    fun setAppListPackages(context: Context, packages: Set<String>) {
+        context.getSharedPreferences(PREF_FILE, Context.MODE_PRIVATE)
+            .edit { putString(KEY_APP_LIST_PACKAGES, packages.joinToString("\n")) }
     }
 }

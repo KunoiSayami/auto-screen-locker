@@ -172,6 +172,18 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/switchPersistent" />
 
+        <!-- App list button -->
+        <Button
+            android:id="@+id/btnAppList"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/btn_app_list"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/cbWarnBeforeLock" />
+
         <!-- Screen-off method collapsible header -->
         <LinearLayout
             android:id="@+id/llMethodHeader"
@@ -184,7 +196,7 @@
             android:padding="4dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/cbWarnBeforeLock">
+            app:layout_constraintTop_toBottomOf="@id/btnAppList">
 
             <LinearLayout
                 android:layout_width="0dp"

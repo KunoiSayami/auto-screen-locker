@@ -224,6 +224,10 @@ class MainActivity : AppCompatActivity() {
             Prefs.setWarnBeforeLock(this, checked)
         }
 
+        binding.btnAppList.setOnClickListener {
+            startActivity(Intent(this, AppListActivity::class.java))
+        }
+
         binding.llMethodHeader.setOnClickListener {
             val expanded = binding.rgMethod.visibility == View.VISIBLE
             binding.rgMethod.visibility = if (expanded) View.GONE else View.VISIBLE
