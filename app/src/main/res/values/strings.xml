@@ -37,6 +37,7 @@
     <string name="error_timeout_too_short">Minimum timeout is %1$d seconds</string>
     <string name="label_warn_before_lock">Show warning 5 seconds before locking</string>
     <string name="toast_locking_soon">Screen will lock in 5 seconds</string>
+    <string name="label_version">v%1$s</string>
     <string name="notification_channel_name">Auto Screen Locker</string>
     <string name="notification_title">Auto Screen Locker active</string>
     <string name="notification_text">Will lock screen after inactivity timeout</string>

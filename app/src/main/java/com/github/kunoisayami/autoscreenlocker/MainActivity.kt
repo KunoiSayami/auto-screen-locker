@@ -48,6 +48,8 @@ class MainActivity : AppCompatActivity() {
 
         Shizuku.addRequestPermissionResultListener(shizukuPermissionListener)
 
+        binding.tvVersion.text = getString(R.string.label_version, packageManager.getPackageInfo(packageName, 0).versionName)
+
         loadSavedTimeout()
         binding.switchPersistent.isChecked = Prefs.isPersistent(this)
         binding.cbWarnBeforeLock.isChecked = Prefs.isWarnBeforeLock(this)
