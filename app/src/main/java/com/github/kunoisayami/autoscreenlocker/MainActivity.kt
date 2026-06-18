@@ -3,11 +3,14 @@ package com.github.kunoisayami.autoscreenlocker
 import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.os.PowerManager
 import android.provider.Settings
 import android.view.View
 import android.view.accessibility.AccessibilityManager
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
@@ -54,9 +57,25 @@ class MainActivity : AppCompatActivity() {
         binding.switchPersistent.isChecked = Prefs.isPersistent(this)
         binding.cbWarnBeforeLock.isChecked = Prefs.isWarnBeforeLock(this)
         setupListeners()
+        promptBatteryOptimizationIfNeeded()
     }
 
-override fun onDestroy() {
+    private fun promptBatteryOptimizationIfNeeded() {
+        val pm = getSystemService(POWER_SERVICE) as PowerManager
+        if (pm.isIgnoringBatteryOptimizations(packageName)) return
+        AlertDialog.Builder(this)
+            .setTitle(R.string.dialog_battery_title)
+            .setMessage(R.string.dialog_battery_message)
+            .setPositiveButton(R.string.dialog_battery_ok) { _, _ ->
+                startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                    data = Uri.parse("package:$packageName")
+                })
+            }
+            .setNegativeButton(R.string.dialog_battery_cancel, null)
+            .show()
+    }
+
+    override fun onDestroy() {
         super.onDestroy()
         Shizuku.removeRequestPermissionResultListener(shizukuPermissionListener)
     }
