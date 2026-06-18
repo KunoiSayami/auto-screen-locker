@@ -68,10 +68,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadSavedTimeout() {
-        val totalMs = Prefs.timeoutMs(this)
-        val totalSec = (totalMs / 1000).toInt()
+        val totalSec = (Prefs.timeoutMs(this) / 1000).toInt()
         binding.etMinutes.setText((totalSec / 60).toString())
         binding.etSeconds.setText((totalSec % 60).toString())
+        binding.etTotalSeconds.setText(totalSec.toString())
     }
 
     private fun updateMethodSelector() {
@@ -145,15 +145,56 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun isSecondsModeActive() = binding.rgInputMode.checkedRadioButtonId == R.id.rbModeTotalSec
+
+    private fun applyInputMode(secondsMode: Boolean) {
+        if (secondsMode) {
+            binding.tilMinutes.visibility = View.GONE
+            binding.tilSeconds.visibility = View.GONE
+            binding.tilTotalSeconds.visibility = View.VISIBLE
+        } else {
+            binding.tilMinutes.visibility = View.VISIBLE
+            binding.tilSeconds.visibility = View.VISIBLE
+            binding.tilTotalSeconds.visibility = View.GONE
+        }
+    }
+
+    private fun syncToSecondMode() {
+        val min = binding.etMinutes.text?.toString()?.toIntOrNull() ?: 0
+        val sec = binding.etSeconds.text?.toString()?.toIntOrNull()?.coerceIn(0, 59) ?: 0
+        binding.etTotalSeconds.setText((min * 60 + sec).toString())
+    }
+
+    private fun syncToMinSecMode() {
+        val total = binding.etTotalSeconds.text?.toString()?.toIntOrNull() ?: 0
+        binding.etMinutes.setText((total / 60).toString())
+        binding.etSeconds.setText((total % 60).toString())
+    }
+
     private fun setupListeners() {
+        binding.rgInputMode.setOnCheckedChangeListener { _, checkedId ->
+            val secondsMode = checkedId == R.id.rbModeTotalSec
+            if (secondsMode) syncToSecondMode() else syncToMinSecMode()
+            applyInputMode(secondsMode)
+        }
+
         binding.btnSave.setOnClickListener {
-            val minutes = binding.etMinutes.text?.toString()?.toIntOrNull() ?: 0
-            val seconds = binding.etSeconds.text?.toString()?.toIntOrNull()?.coerceIn(0, 59) ?: 0
-            val totalSec = minutes * 60 + seconds
+            val totalSec = if (isSecondsModeActive()) {
+                binding.etTotalSeconds.text?.toString()?.toIntOrNull() ?: 0
+            } else {
+                val minutes = binding.etMinutes.text?.toString()?.toIntOrNull() ?: 0
+                val seconds = binding.etSeconds.text?.toString()?.toIntOrNull()?.coerceIn(0, 59) ?: 0
+                minutes * 60 + seconds
+            }
             if (totalSec < MIN_TIMEOUT_SEC) {
-                binding.tilSeconds.error = getString(R.string.error_timeout_too_short, MIN_TIMEOUT_SEC)
+                if (isSecondsModeActive()) {
+                    binding.tilTotalSeconds.error = getString(R.string.error_timeout_too_short, MIN_TIMEOUT_SEC)
+                } else {
+                    binding.tilSeconds.error = getString(R.string.error_timeout_too_short, MIN_TIMEOUT_SEC)
+                }
                 return@setOnClickListener
             }
+            binding.tilTotalSeconds.error = null
             binding.tilSeconds.error = null
             binding.tilMinutes.error = null
             Prefs.setTimeoutMs(this, totalSec * 1000L)

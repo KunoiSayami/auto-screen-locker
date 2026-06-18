@@ -15,6 +15,9 @@
     <string name="status_missing_accessibility">Accessibility service not enabled</string>
     <string name="label_minutes">Minutes</string>
     <string name="label_seconds">Seconds</string>
+    <string name="label_total_seconds">Total seconds</string>
+    <string name="label_mode_min_sec">Min + Sec</string>
+    <string name="label_mode_total_sec">Seconds only</string>
     <string name="title_screen_off_method">Screen-off method</string>
     <string name="method_lock_now">Lock screen (always available, requires password on wake)</string>
     <string name="method_shizuku">Sleep via Shizuku (no password on wake)</string>
